@@ -15,7 +15,7 @@ Here's the simplest possible usage to query for `User` documents with a `WHERE` 
 var millers = session
     .Query<User>("where data ->> 'LastName' = 'Miller'");
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/QueryBySql.cs#L10-L15' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_for_whole_document_by_where_clause' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/QueryBySql.cs#L11-L16' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_for_whole_document_by_where_clause' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Or with parameterized SQL:
@@ -23,11 +23,34 @@ Or with parameterized SQL:
 <!-- snippet: sample_query_with_sql_and_parameters -->
 <a id='snippet-sample_query_with_sql_and_parameters'></a>
 ```cs
+// pass in a list of anonymous parameters
 var millers = session
     .Query<User>("where data ->> 'LastName' = ?", "Miller");
+
+// pass in named parameters using an anonymous object
+var params1 = new { First = "Jeremy", Last = "Miller" };
+var jeremysAndMillers1 = session
+    .Query<User>("where data ->> 'FirstName' = @First or data ->> 'LastName' = @Last", params1);
+
+// pass in named parameters using a dictionary
+var params2 = new Dictionary<string, object>
+{
+    { "First", "Jeremy" },
+    { "Last", "Miller" }
+};
+var jeremysAndMillers2 = session
+    .Query<User>("where data ->> 'FirstName' = @First or data ->> 'LastName' = @Last", params2);
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/QueryBySql.cs#L20-L25' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_with_sql_and_parameters' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/QueryBySql.cs#L21-L41' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_with_sql_and_parameters' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
+
+::: warning
+There are a lot of caveats with using named parameters. Most importantly they cannot be mixed with positional parameters, so be careful when composing multiple queries together. They are also "global" meaning that they will match the parameter name anywhere in the sql command, not just the line you added alongside the parameters.
+
+Under the hood, postgres does not support named parameters. [Npgsql supports named parameters](https://www.npgsql.org/doc/basic-usage.html#positional-and-named-placeholders) by parsing and replacing positional parameters as named parameters. Parsing is not bullet-proof and has a performance impact.
+
+Overall, you should avoid using named parameters unless you really need to.
+:::
 
 And finally asynchronously:
 
@@ -37,7 +60,7 @@ And finally asynchronously:
 var millers = await session
     .QueryAsync<User>("where data ->> 'LastName' = ?", "Miller");
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/QueryBySql.cs#L30-L35' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_with_sql_async' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/QueryBySql.cs#L46-L51' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_with_sql_async' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 All of the samples so far are selecting the whole `User` document and merely supplying
